@@ -8,3 +8,13 @@
 string tempvar = 'Enter_your_name_here';
 System.debug('Hello World!');
 System.debug('My name is ' + tempvar);
+
+Case c = new Case(Subject = 'SLA test', Priority = 'High');
+insert c;
+System.debug([SELECT SLA_Due_Date__c, SLA_Status__c, CreatedDate FROM Case WHERE Id = :c.Id]);
+
+
+Case c1 = [SELECT Id FROM Case WHERE Subject = 'SLA test' LIMIT 1];
+c1.Priority = 'Low';
+update c1;
+System.debug([SELECT SLA_Due_Date__c, SLA_Status__c, CreatedDate FROM Case WHERE Id = :c1.Id]);
