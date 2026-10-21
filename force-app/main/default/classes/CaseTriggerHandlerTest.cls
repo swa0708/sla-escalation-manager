@@ -58,4 +58,25 @@ private class CaseTriggerHandlerTest {
         Long diffMs = Math.abs(saved.SLA_Due_Date__c.getTime() - before.addHours(24).getTime());
         System.assert(diffMs < 5000, 'Case with no priority should get the Medium deadline (24 hours)');
     }
+
+@isTest
+static void bulkInsertOf200Cases() {
+    List<String> priorities = new List<String>{ 'High', 'Medium', 'Low' };
+    List<Case> cases = new List<Case>();
+
+    for (Integer i = 0; i < 200; i++) {
+        cases.add(new Case(Subject = 'Bulk ' + i, Priority = priorities.get(Math.mod(i, 3))));
+    }
+
+    Test.startTest();
+    insert cases;
+    Test.stopTest();
+
+    List<Case> saved = [SELECT SLA_Due_Date__c, SLA_Status__c FROM Case WHERE Id IN :cases];
+    System.assertEquals(200, saved.size(), 'All 200 Cases should be saved');
+    for (Case c : saved) {
+        System.assertEquals('On Track', c.SLA_Status__c, 'Every bulk Case should start On Track');
+        System.assertNotEquals(null, c.SLA_Due_Date__c, 'Every bulk Case should get a due date');
+    }
+}
 }
