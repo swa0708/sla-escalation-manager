@@ -43,4 +43,19 @@ private class CaseTriggerHandlerTest {
          System.assertEquals(saved.SLA_Due_Date__c, updated.SLA_Due_Date__c,
         'Due date should not change if priority did not change');
     }
+
+    @isTest
+    static void missingPriorityGetsMediumDeadline() {
+
+        Datetime before = System.now();
+        Case c = new Case(Subject = 'Test no priority');
+        Test.startTest();
+        insert c;
+        Test.stopTest();
+        Case saved = [SELECT SLA_Due_Date__c, SLA_Status__c, priority FROM Case WHERE Id = :c.Id];
+        System.assertEquals('On Track', saved.SLA_Status__c, 'Case with no priority should still start On Track');
+        System.debug(saved.Priority);
+        Long diffMs = Math.abs(saved.SLA_Due_Date__c.getTime() - before.addHours(24).getTime());
+        System.assert(diffMs < 5000, 'Case with no priority should get the Medium deadline (24 hours)');
+    }
 }
