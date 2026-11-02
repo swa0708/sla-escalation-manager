@@ -18,3 +18,16 @@ Case c1 = [SELECT Id FROM Case WHERE Subject = 'SLA test' LIMIT 1];
 c1.Priority = 'Low';
 update c1;
 System.debug([SELECT SLA_Due_Date__c, SLA_Status__c, CreatedDate FROM Case WHERE Id = :c1.Id]);
+
+Case c = new Case(Subject = 'Batch test', Priority = 'High');
+insert c;
+c.SLA_Due_Date__c = System.now().addHours(-1);
+update c;
+Database.executeBatch(new SlaCheckBatch());
+
+System.debug([SELECT Subject, SLA_Status__c, IsEscalated FROM Case WHERE Subject = 'Batch test']);
+System.debug([SELECT Name, Case__c, Escalation_Type__c, Escalated_On__c FROM Escalation_Log__c]);
+
+System.debug([SELECT Name, Case__c, Escalation_Type__c FROM Escalation_Log__c ORDER BY Name]);
+
+System.schedule('SLA Check Hourly', '0 0 * * * ?', new SlaCheckScheduler());

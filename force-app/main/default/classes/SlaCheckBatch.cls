@@ -49,6 +49,12 @@ public with sharing class SlaCheckBatch implements Database.Batchable<SObject> {
 
     if(!logs.isEmpty()){
         insert logs;
+        List<Id> logIds = new List<Id>();
+        for (Escalation_Log__c log : logs) {
+            logIds.add(log.Id);
+        }
+        
+        System.enqueueJob(new SlaAlertQueueable(logIds));
     }
 }
     public void finish(Database.BatchableContext context) {
