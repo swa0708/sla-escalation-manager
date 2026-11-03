@@ -95,4 +95,29 @@ private class SlaCheckBatchTest {
         System.assert(!saved.IsEscalated, 'Closed Case should not be flagged as escalated');
         System.assertEquals(0, logs.size(), 'No log row should be written');
     }
+
+    @isTest
+    static void secondRunCreatesNoDuplicateLogs() {
+        Case c = new Case(Subject = 'Second Run test', Priority = 'High');
+        insert c;
+        c.SLA_Due_Date__c = System.now().addHours(-1);
+        update c;
+
+        Test.startTest();
+        Database.executeBatch(new SlaCheckBatch());
+        Database.executeBatch(new SlaCheckBatch());
+        Test.stopTest();
+
+        Case saved = [SELECT SLA_Status__c, IsEscalated FROM Case WHERE Id = :c.Id];
+        List<Escalation_Log__c> logs = [
+            SELECT Escalation_Type__c, Alert_Sent__c FROM Escalation_Log__c WHERE Case__c = :c.Id
+        ];
+
+        System.assertEquals('Breached', saved.SLA_Status__c, 'Past-due Case should be Breached');
+        System.assert(saved.IsEscalated, 'Breached Case should be flagged as escalated');
+        System.assertEquals(1, logs.size(), 'Exactly one log row should be written');
+        System.assertEquals('Breached', logs[0].Escalation_Type__c, 'Log should record the Breached type');
+        System.assert(logs[0].Alert_Sent__c, 'The Queueable should have marked the alert as sent');
+    }
+
 }
