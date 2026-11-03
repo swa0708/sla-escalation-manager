@@ -49,4 +49,50 @@ private class SlaCheckBatchTest {
         System.assert(logs[0].Alert_Sent__c, 'The Queueable should have marked the alert as sent');
 
     }
+
+    @isTest
+    static void onTrackCaseIsLeftAlone() {
+
+        Case c = new Case(Subject = 'On Track test', Priority = 'High');
+        insert c;
+        c.SLA_Due_Date__c = System.now().addHours(48);
+        update c;
+
+        Test.startTest();
+        Database.executeBatch(new SlaCheckBatch());
+        Test.stopTest();
+
+        Case saved = [SELECT SLA_Status__c, IsEscalated FROM Case WHERE Id = :c.Id];
+        List<Escalation_Log__c> logs = [
+            SELECT Escalation_Type__c, Alert_Sent__c FROM Escalation_Log__c WHERE Case__c = :c.Id
+        ];
+
+        System.assertEquals('On Track', saved.SLA_Status__c, 'Case with 48 hours time left should be on track');        
+        System.assert(!saved.IsEscalated, 'On Track Case should not be flagged as escalated');
+        System.assertEquals(0, logs.size(), 'No log row should be written');
+    }
+
+    @isTest
+    static void closedCaseIsIgnored() {
+
+        Case c = new Case(Subject = 'Closed Case Test', Priority = 'High');
+        insert c;
+        c.SLA_Due_Date__c = System.now().addHours(-1);
+        c.Status = 'Closed';
+        update c;
+
+        Test.startTest();
+        Database.executeBatch(new SlaCheckBatch());
+        Test.stopTest();
+
+        Case saved = [SELECT SLA_Status__c, IsEscalated, IsClosed FROM Case WHERE Id = :c.Id];
+        List<Escalation_Log__c> logs = [
+            SELECT Escalation_Type__c, Alert_Sent__c FROM Escalation_Log__c WHERE Case__c = :c.Id
+        ];
+
+        System.assert(saved.IsClosed, 'Test setup should have closed the Case');
+        System.assertEquals('On Track', saved.SLA_Status__c, 'Closed Case should not be touched by the batch');
+        System.assert(!saved.IsEscalated, 'Closed Case should not be flagged as escalated');
+        System.assertEquals(0, logs.size(), 'No log row should be written');
+    }
 }
