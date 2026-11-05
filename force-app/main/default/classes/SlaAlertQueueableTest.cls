@@ -7,6 +7,7 @@ private class SlaAlertQueueableTest {
         insert c;
         Escalation_Log__c log = new Escalation_Log__c(Case__c = c.Id, Escalation_Type__c = 'Breached', Escalated_On__c = System.now(), Alert_Sent__c = false);
         insert log;
+        Test.setMock(HttpCalloutMock.class, new SlaWebhookMock(200));
         Test.startTest();
             System.assert(!log.Alert_Sent__c, 'Log should start with Alert_Sent__c false');
             System.enqueueJob(new SlaAlertQueueable(new List<Id>{ log.Id }));

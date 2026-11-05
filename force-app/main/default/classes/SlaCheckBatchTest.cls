@@ -7,7 +7,7 @@ private class SlaCheckBatchTest {
         insert c;
         c.SLA_Due_Date__c = System.now().addHours(-1);
         update c;
-
+        Test.setMock(HttpCalloutMock.class, new SlaWebhookMock(200));
         Test.startTest();
         Database.executeBatch(new SlaCheckBatch());
         Test.stopTest();
@@ -32,7 +32,7 @@ private class SlaCheckBatchTest {
         Test.setCreatedDate(c.id, System.now().addHours(-8));
         c.SLA_Due_Date__c = System.now().addHours(1);
         update c;
-
+        Test.setMock(HttpCalloutMock.class, new SlaWebhookMock(200));
         Test.startTest();
         Database.executeBatch(new SlaCheckBatch());
         Test.stopTest();
@@ -102,7 +102,7 @@ private class SlaCheckBatchTest {
         insert c;
         c.SLA_Due_Date__c = System.now().addHours(-1);
         update c;
-
+        Test.setMock(HttpCalloutMock.class, new SlaWebhookMock(200));
         Test.startTest();
         Database.executeBatch(new SlaCheckBatch());
         Database.executeBatch(new SlaCheckBatch());
@@ -136,7 +136,7 @@ private class SlaCheckBatchTest {
         }
         
         update cases;
-
+        Test.setMock(HttpCalloutMock.class, new SlaWebhookMock(200));
         Test.startTest();
         Database.executeBatch(new SlaCheckBatch());
         Test.stopTest();
