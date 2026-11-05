@@ -37,5 +37,11 @@ insert c;
 c.SLA_Due_Date__c = System.now().addHours(-1);
 update c;
 Database.executeBatch(new SlaCheckBatch());
-
 System.debug([SELECT Name, Case__r.Subject, Escalation_Type__c, Alert_Sent__c FROM Escalation_Log__c WHERE Case__r.Subject = 'Alert test']);
+
+
+Case c = new Case(Subject = 'Webhook test', Priority = 'High');
+insert c;
+c.SLA_Due_Date__c = System.now().addHours(-1);
+update c;
+Database.executeBatch(new SlaCheckBatch());

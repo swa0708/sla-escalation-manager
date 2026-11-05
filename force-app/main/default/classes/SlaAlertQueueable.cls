@@ -1,4 +1,4 @@
-public with sharing class SlaAlertQueueable implements Queueable {
+public with sharing class SlaAlertQueueable implements Queueable, Database.AllowsCallouts {
 
     private List<Id> logIds;
 
@@ -8,15 +8,32 @@ public with sharing class SlaAlertQueueable implements Queueable {
 
     public void execute(QueueableContext context) {
        List<Escalation_Log__c> logs = [
-            SELECT Id, Alert_Sent__c
+            SELECT Id, Name, Escalation_Type__c, Case__r.CaseNumber, Case__r.Subject, Alert_Sent__c
             FROM Escalation_Log__c
             WHERE Id IN :logIds
         ];
 
+        List<Map<String, Object>> payload = new List<Map<String, Object>>();
         for(Escalation_Log__c log : logs){
-            log.Alert_Sent__c = true;
+            Map<String, Object> item = new Map<String, Object>();
+            item.put('log', log.Name);
+            item.put('type', log.Escalation_Type__c);
+            item.put('caseNumber', log.Case__r.CaseNumber);
+            item.put('subject', log.Case__r.Subject);
+            payload.add(item);            
         }
 
-        update logs;
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('callout:SLA_Webhook');
+        req.setMethod('POST');
+        req.setHeader('Content-Type', 'application/json');
+        req.setBody(JSON.serialize(payload));
+        HttpResponse res = new Http().send(req);
+        if (res.getStatusCode() >= 200 && res.getStatusCode() <= 299) {
+            for (Escalation_Log__c log : logs) {
+                log.Alert_Sent__c = true;
+            }
+            update logs;
+        }
     }
 }
