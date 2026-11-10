@@ -28,7 +28,13 @@ public with sharing class SlaAlertQueueable implements Queueable, Database.Allow
         req.setMethod('POST');
         req.setHeader('Content-Type', 'application/json');
         req.setBody(JSON.serialize(payload));
-        HttpResponse res = new Http().send(req);
+        HttpResponse res;
+        try {
+            res = new Http().send(req);
+        } catch (CalloutException e) {
+            System.debug(LoggingLevel.ERROR, 'Alert callout failed: ' + e.getMessage());
+            return;
+        }
         if (res.getStatusCode() >= 200 && res.getStatusCode() <= 299) {
             for (Escalation_Log__c log : logs) {
                 log.Alert_Sent__c = true;

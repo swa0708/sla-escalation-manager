@@ -33,4 +33,18 @@ private class SlaAlertQueueableTest {
         // and since it is outside of salesforce environment it is crucial 
     }
 
+    @isTest
+    static void exceptionDuringCalloutLeavesAlertUnsent() {
+        Case c = new Case(Subject = 'Callout exception test', Priority = 'High');
+        insert c;
+        Escalation_Log__c log = new Escalation_Log__c(Case__c = c.Id, Escalation_Type__c = 'Breached', Escalated_On__c = System.now(), Alert_Sent__c = false);
+        insert log;
+        Test.setMock(HttpCalloutMock.class, new SlaWebhookThrowingMock());
+        System.assert(!log.Alert_Sent__c, 'Log should start with Alert_Sent__c false');
+        Test.startTest();
+        System.enqueueJob(new SlaAlertQueueable(new List<Id>{ log.Id }));
+        Test.stopTest();
+        Escalation_Log__c saved = [SELECT Alert_Sent__c FROM Escalation_Log__c WHERE Id = :log.Id];
+        System.assert(!saved.Alert_Sent__c, 'A callout exception must leave Alert_Sent__c false so the alert can be retried');    }
+
 }
