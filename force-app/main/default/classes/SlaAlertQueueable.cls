@@ -32,8 +32,8 @@ public with sharing class SlaAlertQueueable implements Queueable, Database.Allow
         try {
             res = new Http().send(req);
         } catch (CalloutException e) {
-            System.debug(LoggingLevel.ERROR, 'Alert callout failed: ' + e.getMessage());
-            return;
+                    System.debug(LoggingLevel.ERROR, 'Alert callout failed: ' + e.getMessage());
+                    return;
         }
         if (res.getStatusCode() >= 200 && res.getStatusCode() <= 299) {
             for (Escalation_Log__c log : logs) {
